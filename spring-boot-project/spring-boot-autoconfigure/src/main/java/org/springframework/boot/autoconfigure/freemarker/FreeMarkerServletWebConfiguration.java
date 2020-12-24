@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,22 +53,21 @@ class FreeMarkerServletWebConfiguration extends AbstractFreeMarkerConfiguration 
 
 	@Bean
 	@ConditionalOnMissingBean(FreeMarkerConfig.class)
-	public FreeMarkerConfigurer freeMarkerConfigurer() {
+	FreeMarkerConfigurer freeMarkerConfigurer() {
 		FreeMarkerConfigurer configurer = new FreeMarkerConfigurer();
 		applyProperties(configurer);
 		return configurer;
 	}
 
 	@Bean
-	public freemarker.template.Configuration freeMarkerConfiguration(
-			FreeMarkerConfig configurer) {
+	freemarker.template.Configuration freeMarkerConfiguration(FreeMarkerConfig configurer) {
 		return configurer.getConfiguration();
 	}
 
 	@Bean
 	@ConditionalOnMissingBean(name = "freeMarkerViewResolver")
 	@ConditionalOnProperty(name = "spring.freemarker.enabled", matchIfMissing = true)
-	public FreeMarkerViewResolver freeMarkerViewResolver() {
+	FreeMarkerViewResolver freeMarkerViewResolver() {
 		FreeMarkerViewResolver resolver = new FreeMarkerViewResolver();
 		getProperties().applyToMvcViewResolver(resolver);
 		return resolver;
@@ -77,7 +76,7 @@ class FreeMarkerServletWebConfiguration extends AbstractFreeMarkerConfiguration 
 	@Bean
 	@ConditionalOnEnabledResourceChain
 	@ConditionalOnMissingFilterBean(ResourceUrlEncodingFilter.class)
-	public FilterRegistrationBean<ResourceUrlEncodingFilter> resourceUrlEncodingFilter() {
+	FilterRegistrationBean<ResourceUrlEncodingFilter> resourceUrlEncodingFilter() {
 		FilterRegistrationBean<ResourceUrlEncodingFilter> registration = new FilterRegistrationBean<>(
 				new ResourceUrlEncodingFilter());
 		registration.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.ERROR);

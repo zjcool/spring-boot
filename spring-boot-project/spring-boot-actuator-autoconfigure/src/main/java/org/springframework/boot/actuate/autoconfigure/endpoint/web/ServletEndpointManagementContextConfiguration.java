@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package org.springframework.boot.actuate.autoconfigure.endpoint.web;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
-import org.springframework.boot.actuate.autoconfigure.endpoint.ExposeExcludePropertyEndpointFilter;
+import org.springframework.boot.actuate.autoconfigure.endpoint.expose.IncludeExcludeEndpointFilter;
 import org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration;
 import org.springframework.boot.actuate.endpoint.web.ExposableServletEndpoint;
 import org.springframework.boot.actuate.endpoint.web.ServletEndpointRegistrar;
@@ -34,7 +34,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
- * {@link ManagementContextConfiguration} for servlet endpoints.
+ * {@link ManagementContextConfiguration @ManagementContextConfiguration} for servlet
+ * endpoints.
  *
  * @author Phillip Webb
  * @author Andy Wilkinson
@@ -46,11 +47,11 @@ import org.springframework.web.servlet.DispatcherServlet;
 public class ServletEndpointManagementContextConfiguration {
 
 	@Bean
-	public ExposeExcludePropertyEndpointFilter<ExposableServletEndpoint> servletExposeExcludePropertyEndpointFilter(
+	public IncludeExcludeEndpointFilter<ExposableServletEndpoint> servletExposeExcludePropertyEndpointFilter(
 			WebEndpointProperties properties) {
 		WebEndpointProperties.Exposure exposure = properties.getExposure();
-		return new ExposeExcludePropertyEndpointFilter<>(ExposableServletEndpoint.class,
-				exposure.getInclude(), exposure.getExclude());
+		return new IncludeExcludeEndpointFilter<>(ExposableServletEndpoint.class, exposure.getInclude(),
+				exposure.getExclude());
 	}
 
 	@Configuration(proxyBeanMethods = false)
@@ -58,12 +59,9 @@ public class ServletEndpointManagementContextConfiguration {
 	public static class WebMvcServletEndpointManagementContextConfiguration {
 
 		@Bean
-		public ServletEndpointRegistrar servletEndpointRegistrar(
-				WebEndpointProperties properties,
-				ServletEndpointsSupplier servletEndpointsSupplier,
-				DispatcherServletPath dispatcherServletPath) {
-			return new ServletEndpointRegistrar(
-					dispatcherServletPath.getRelativePath(properties.getBasePath()),
+		public ServletEndpointRegistrar servletEndpointRegistrar(WebEndpointProperties properties,
+				ServletEndpointsSupplier servletEndpointsSupplier, DispatcherServletPath dispatcherServletPath) {
+			return new ServletEndpointRegistrar(dispatcherServletPath.getRelativePath(properties.getBasePath()),
 					servletEndpointsSupplier.getEndpoints());
 		}
 
@@ -75,12 +73,9 @@ public class ServletEndpointManagementContextConfiguration {
 	public static class JerseyServletEndpointManagementContextConfiguration {
 
 		@Bean
-		public ServletEndpointRegistrar servletEndpointRegistrar(
-				WebEndpointProperties properties,
-				ServletEndpointsSupplier servletEndpointsSupplier,
-				JerseyApplicationPath jerseyApplicationPath) {
-			return new ServletEndpointRegistrar(
-					jerseyApplicationPath.getRelativePath(properties.getBasePath()),
+		public ServletEndpointRegistrar servletEndpointRegistrar(WebEndpointProperties properties,
+				ServletEndpointsSupplier servletEndpointsSupplier, JerseyApplicationPath jerseyApplicationPath) {
+			return new ServletEndpointRegistrar(jerseyApplicationPath.getRelativePath(properties.getBasePath()),
 					servletEndpointsSupplier.getEndpoints());
 		}
 

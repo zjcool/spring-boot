@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,6 @@ import org.springframework.context.annotation.Configuration;
  * No-op cache configuration used to disable caching via configuration.
  *
  * @author Stephane Nicoll
- * @since 1.3.0
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(CacheManager.class)
@@ -35,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
 class NoOpCacheConfiguration {
 
 	@Bean
-	public NoOpCacheManager cacheManager() {
+	NoOpCacheManager cacheManager() {
 		return new NoOpCacheManager();
 	}
 

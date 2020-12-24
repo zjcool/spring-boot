@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,7 @@ import org.springframework.boot.devtools.classpath.ClassPathRestartStrategy;
 import org.springframework.boot.devtools.classpath.PatternClassPathRestartStrategy;
 import org.springframework.boot.devtools.filewatch.FileSystemWatcher;
 import org.springframework.boot.devtools.filewatch.FileSystemWatcherFactory;
+import org.springframework.boot.devtools.filewatch.SnapshotStateRepository;
 import org.springframework.boot.devtools.livereload.LiveReloadServer;
 import org.springframework.boot.devtools.restart.ConditionalOnInitializedRestarter;
 import org.springframework.boot.devtools.restart.RestartScope;
@@ -39,6 +40,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.GenericApplicationListener;
 import org.springframework.core.ResolvableType;
@@ -67,20 +69,18 @@ public class LocalDevToolsAutoConfiguration {
 		@Bean
 		@RestartScope
 		@ConditionalOnMissingBean
-		public LiveReloadServer liveReloadServer(DevToolsProperties properties) {
+		LiveReloadServer liveReloadServer(DevToolsProperties properties) {
 			return new LiveReloadServer(properties.getLivereload().getPort(),
 					Restarter.getInstance().getThreadFactory());
 		}
 
 		@Bean
-		public OptionalLiveReloadServer optionalLiveReloadServer(
-				LiveReloadServer liveReloadServer) {
+		OptionalLiveReloadServer optionalLiveReloadServer(LiveReloadServer liveReloadServer) {
 			return new OptionalLiveReloadServer(liveReloadServer);
 		}
 
 		@Bean
-		public LiveReloadServerEventListener liveReloadServerEventListener(
-				OptionalLiveReloadServer liveReloadServer) {
+		LiveReloadServerEventListener liveReloadServerEventListener(OptionalLiveReloadServer liveReloadServer) {
 			return new LiveReloadServerEventListener(liveReloadServer);
 		}
 
@@ -89,6 +89,7 @@ public class LocalDevToolsAutoConfiguration {
 	/**
 	 * Local Restart Configuration.
 	 */
+	@Lazy(false)
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnProperty(prefix = "spring.devtools.restart", name = "enabled", matchIfMissing = true)
 	static class RestartConfiguration {
@@ -100,63 +101,55 @@ public class LocalDevToolsAutoConfiguration {
 		}
 
 		@Bean
-		public ApplicationListener<ClassPathChangedEvent> restartingClassPathChangedEventListener(
+		ApplicationListener<ClassPathChangedEvent> restartingClassPathChangedEventListener(
 				FileSystemWatcherFactory fileSystemWatcherFactory) {
 			return (event) -> {
 				if (event.isRestartRequired()) {
-					Restarter.getInstance().restart(
-							new FileWatchingFailureHandler(fileSystemWatcherFactory));
+					Restarter.getInstance().restart(new FileWatchingFailureHandler(fileSystemWatcherFactory));
 				}
 			};
 		}
 
 		@Bean
 		@ConditionalOnMissingBean
-		public ClassPathFileSystemWatcher classPathFileSystemWatcher(
-				FileSystemWatcherFactory fileSystemWatcherFactory,
+		ClassPathFileSystemWatcher classPathFileSystemWatcher(FileSystemWatcherFactory fileSystemWatcherFactory,
 				ClassPathRestartStrategy classPathRestartStrategy) {
 			URL[] urls = Restarter.getInstance().getInitialUrls();
-			ClassPathFileSystemWatcher watcher = new ClassPathFileSystemWatcher(
-					fileSystemWatcherFactory, classPathRestartStrategy, urls);
+			ClassPathFileSystemWatcher watcher = new ClassPathFileSystemWatcher(fileSystemWatcherFactory,
+					classPathRestartStrategy, urls);
 			watcher.setStopWatcherOnRestart(true);
 			return watcher;
 		}
 
 		@Bean
 		@ConditionalOnMissingBean
-		public ClassPathRestartStrategy classPathRestartStrategy() {
-			return new PatternClassPathRestartStrategy(
-					this.properties.getRestart().getAllExclude());
+		ClassPathRestartStrategy classPathRestartStrategy() {
+			return new PatternClassPathRestartStrategy(this.properties.getRestart().getAllExclude());
 		}
 
 		@Bean
-		public HateoasObjenesisCacheDisabler hateoasObjenesisCacheDisabler() {
-			return new HateoasObjenesisCacheDisabler();
-		}
-
-		@Bean
-		public FileSystemWatcherFactory fileSystemWatcherFactory() {
+		FileSystemWatcherFactory fileSystemWatcherFactory() {
 			return this::newFileSystemWatcher;
 		}
 
 		@Bean
-		@ConditionalOnProperty(prefix = "spring.devtools.restart", name = "log-condition-evaluation-delta", matchIfMissing = true)
-		public ConditionEvaluationDeltaLoggingListener conditionEvaluationDeltaLoggingListener() {
+		@ConditionalOnProperty(prefix = "spring.devtools.restart", name = "log-condition-evaluation-delta",
+				matchIfMissing = true)
+		ConditionEvaluationDeltaLoggingListener conditionEvaluationDeltaLoggingListener() {
 			return new ConditionEvaluationDeltaLoggingListener();
 		}
 
 		private FileSystemWatcher newFileSystemWatcher() {
 			Restart restartProperties = this.properties.getRestart();
-			FileSystemWatcher watcher = new FileSystemWatcher(true,
-					restartProperties.getPollInterval(),
-					restartProperties.getQuietPeriod());
+			FileSystemWatcher watcher = new FileSystemWatcher(true, restartProperties.getPollInterval(),
+					restartProperties.getQuietPeriod(), SnapshotStateRepository.STATIC);
 			String triggerFile = restartProperties.getTriggerFile();
 			if (StringUtils.hasLength(triggerFile)) {
 				watcher.setTriggerFilter(new TriggerFileFilter(triggerFile));
 			}
 			List<File> additionalPaths = restartProperties.getAdditionalPaths();
 			for (File path : additionalPaths) {
-				watcher.addSourceFolder(path.getAbsoluteFile());
+				watcher.addSourceDirectory(path.getAbsoluteFile());
 			}
 			return watcher;
 		}
@@ -188,9 +181,8 @@ public class LocalDevToolsAutoConfiguration {
 
 		@Override
 		public void onApplicationEvent(ApplicationEvent event) {
-			if (event instanceof ContextRefreshedEvent
-					|| (event instanceof ClassPathChangedEvent
-							&& !((ClassPathChangedEvent) event).isRestartRequired())) {
+			if (event instanceof ContextRefreshedEvent || (event instanceof ClassPathChangedEvent
+					&& !((ClassPathChangedEvent) event).isRestartRequired())) {
 				this.liveReloadServer.triggerReload();
 			}
 		}
